@@ -162,6 +162,7 @@ template $GhosttyWindow: Adw.ApplicationWindow {
         Gtk.Box ui_header {
           visible: false;
           can-focus: false;
+          vexpand: false;
           spacing: 8;
           styles [
             "window-chrome",
@@ -188,6 +189,7 @@ template $GhosttyWindow: Adw.ApplicationWindow {
         }
 
         Adw.ToastOverlay toast_overlay {
+          vexpand: true;
           Adw.TabView tab_view {
             notify::n-pages => $notify_n_pages();
             notify::selected-page => $notify_selected_page();
@@ -204,6 +206,9 @@ template $GhosttyWindow: Adw.ApplicationWindow {
         Gtk.Box ui_footer {
           visible: false;
           can-focus: false;
+          // The row expands within the requested footer height, but must not
+          // make the footer itself compete with the terminal for window space.
+          vexpand: false;
           orientation: vertical;
           styles [
             "window-chrome",

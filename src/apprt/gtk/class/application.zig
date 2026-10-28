@@ -1033,6 +1033,30 @@ pub const Application = extern struct {
             else => {},
         }
 
+        // Decorative bars occupy their own space outside the terminal renderer,
+        // so they must paint the same background tint and opacity themselves.
+        try writer.print(
+            \\.window .window-chrome {{
+            \\  background-color: rgba({d},{d},{d},{d:.3});
+            \\  color: rgba({d},{d},{d},0.7);
+            \\}}
+            \\.window .window-chrome separator {{
+            \\  background-color: rgba({d},{d},{d},0.3);
+            \\}}
+            \\
+        , .{
+            config.background.r,
+            config.background.g,
+            config.background.b,
+            config.@"background-opacity",
+            config.foreground.r,
+            config.foreground.g,
+            config.foreground.b,
+            config.foreground.r,
+            config.foreground.g,
+            config.foreground.b,
+        });
+
         const unfocused_fill: CoreConfig.Color = config.@"unfocused-split-fill" orelse config.background;
 
         try writer.print(
