@@ -460,6 +460,55 @@ extension Ghostty {
             return v
         }
 
+        /// Native window chrome reads the app config so it is shared by all
+        /// panes and follows configuration reloads and conditional themes.
+        struct WindowChrome {
+            let visible: Bool
+            let left: String
+            let right: String
+            let height: CGFloat
+        }
+
+        var uiHeader: WindowChrome { windowChrome("header", defaultLeft: "Ghostty") }
+        var uiFooter: WindowChrome { windowChrome("footer", defaultLeft: "") }
+
+        private func windowChrome(_ kind: String, defaultLeft: String) -> WindowChrome {
+            func read<T>(_ key: String, into value: inout T) {
+                guard let config else { return }
+                withUnsafeMutablePointer(to: &value) { pointer in
+                    _ = ghostty_config_get(config, pointer, key, UInt(key.utf8.count))
+                }
+            }
+            func text(_ key: String, fallback: String = "") -> String {
+                var value: UnsafePointer<CChar>?
+                read(key, into: &value)
+                return value.map { String(cString: $0) } ?? fallback
+            }
+            var visible = false
+            var height: UInt32 = 24
+            read("ui-\(kind)", into: &visible)
+            read("ui-\(kind)-height", into: &height)
+            return WindowChrome(
+                visible: visible,
+                left: text("ui-\(kind)-\(kind == "header" ? "title" : "left")", fallback: defaultLeft),
+                right: text("ui-\(kind)-right"),
+                height: CGFloat(min(64, max(20, height)))
+            )
+        }
+
+        var foregroundColor: Color {
+            var color: ghostty_config_color_s = .init()
+            let key = "foreground"
+            guard ghostty_config_get(config, &color, key, UInt(key.utf8.count)) else {
+                return Color(NSColor.labelColor)
+            }
+            return .init(
+                red: Double(color.r) / 255,
+                green: Double(color.g) / 255,
+                blue: Double(color.b) / 255
+            )
+        }
+
         var backgroundColor: Color {
             var color: ghostty_config_color_s = .init()
             let bg_key = "background"

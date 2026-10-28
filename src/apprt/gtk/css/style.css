@@ -230,3 +230,18 @@ label.resize-overlay {
   margin: 0;
   padding: 0;
 }
+
+
+/* Native, non-interactive header/footer. Inherit the window palette, including
+ * custom themes, and leave the background transparent for window opacity. */
+.window-chrome {
+  padding: 0 12px;
+  font-family: monospace;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--window-fg-color), transparent 30%);
+}
+
+.window-chrome separator {
+  min-height: 1px;
+  background-color: color-mix(in srgb, var(--window-fg-color), transparent 70%);
+}

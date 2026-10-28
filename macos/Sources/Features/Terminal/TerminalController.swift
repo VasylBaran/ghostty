@@ -1121,7 +1121,11 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         // intrinsicContentSize returns the correct value immediately,
         // without waiting for @FocusedValue to propagate through the
         // SwiftUI focus chain.
-        container.initialContentSize = focusedSurface?.initialSize
+        if var size = focusedSurface?.initialSize {
+            if config.uiHeader.visible { size.height += config.uiHeader.height }
+            if config.uiFooter.visible { size.height += config.uiFooter.height }
+            container.initialContentSize = size
+        }
 
         window.contentView = container
 

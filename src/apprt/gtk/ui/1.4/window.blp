@@ -159,6 +159,34 @@ template $GhosttyWindow: Adw.ApplicationWindow {
           visible: bind template.debug;
         }
 
+        Gtk.Box ui_header {
+          visible: false;
+          can-focus: false;
+          spacing: 8;
+          styles [
+            "window-chrome",
+          ]
+
+          Gtk.Label {
+            label: "[ ]";
+          }
+          Gtk.Label ui_header_title {
+            ellipsize: end;
+            width-chars: 1;
+            xalign: 0;
+          }
+          Gtk.Separator {
+            orientation: horizontal;
+            hexpand: true;
+            valign: center;
+          }
+          Gtk.Label ui_header_right {
+            ellipsize: end;
+            width-chars: 1;
+            xalign: 1;
+          }
+        }
+
         Adw.ToastOverlay toast_overlay {
           Adw.TabView tab_view {
             notify::n-pages => $notify_n_pages();
@@ -170,6 +198,39 @@ template $GhosttyWindow: Adw.ApplicationWindow {
             setup-menu => $setup_tab_menu();
             menu-model: tab_context_menu;
             shortcuts: none;
+          }
+        }
+
+        Gtk.Box ui_footer {
+          visible: false;
+          can-focus: false;
+          orientation: vertical;
+          styles [
+            "window-chrome",
+          ]
+
+          Gtk.Separator {
+            orientation: horizontal;
+          }
+          Gtk.Box {
+            spacing: 8;
+            vexpand: true;
+
+            Gtk.Label {
+              label: "⌞";
+            }
+            Gtk.Label ui_footer_left {
+              ellipsize: end;
+              width-chars: 1;
+              hexpand: true;
+              xalign: 0;
+            }
+            Gtk.Label ui_footer_right {
+              ellipsize: end;
+              width-chars: 1;
+              hexpand: true;
+              xalign: 1;
+            }
           }
         }
       }

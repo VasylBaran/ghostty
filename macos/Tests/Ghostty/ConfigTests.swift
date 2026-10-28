@@ -4,6 +4,43 @@ import SwiftUI
 
 @Suite
 struct ConfigTests {
+    @Test func windowChromeDefaults() throws {
+        let config = try TemporaryConfig("")
+        #expect(!config.uiHeader.visible)
+        #expect(!config.uiFooter.visible)
+        #expect(config.uiHeader.left == "Ghostty")
+        #expect(config.uiHeader.right.isEmpty)
+        #expect(config.uiFooter.left.isEmpty)
+        #expect(config.uiFooter.right.isEmpty)
+        #expect(config.uiHeader.height == 24)
+        #expect(config.uiFooter.height == 24)
+    }
+
+    @Test func windowChromeLabelsAndHeight() throws {
+        let config = try TemporaryConfig("""
+        ui-header = true
+        ui-header-title = 端末
+        ui-header-right = Development
+        ui-header-height = 0
+        ui-footer-left = Project — Workspace
+        ui-footer-right = Local session // Ready
+        ui-footer-height = 4294967295
+        """)
+        #expect(config.uiHeader.visible)
+        #expect(!config.uiFooter.visible)
+        #expect(config.uiHeader.left == "端末")
+        #expect(config.uiHeader.right == "Development")
+        #expect(config.uiHeader.height == 20)
+        #expect(config.uiFooter.left == "Project — Workspace")
+        #expect(config.uiFooter.right == "Local session // Ready")
+        #expect(config.uiFooter.height == 64)
+
+        try config.reload("ui-footer = true")
+        #expect(!config.uiHeader.visible)
+        #expect(config.uiFooter.visible)
+        #expect(config.uiHeader.left == "Ghostty")
+    }
+
     // MARK: - Boolean Properties
 
     @Test func initialWindowDefaultsToTrue() throws {

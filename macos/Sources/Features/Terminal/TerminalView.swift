@@ -79,6 +79,10 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
                         DebugBuildWarningView()
                     }
 
+                    if ghostty.config.uiHeader.visible {
+                        WindowChromeView(config: ghostty.config, footer: false)
+                    }
+
                     TerminalSplitTreeView(
                         tree: viewModel.surfaceTree,
                         action: { delegate?.performSplitAction($0) })
@@ -103,6 +107,10 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
                         }
                         .frame(idealWidth: lastFocusedSurface?.value?.initialSize?.width,
                                idealHeight: lastFocusedSurface?.value?.initialSize?.height)
+
+                    if ghostty.config.uiFooter.visible {
+                        WindowChromeView(config: ghostty.config, footer: true)
+                    }
                 }
                 // Ignore safe area to extend up in to the titlebar region if we have the "hidden" titlebar style
                 .ignoresSafeArea(.container, edges: ghostty.config.macosTitlebarStyle == .hidden ? .top : [])
@@ -176,5 +184,61 @@ struct DebugBuildWarningView: View {
         .onTapGesture {
             isPopover = true
         }
+    }
+}
+
+/// Decorative window chrome occupies its own layout space, never covering
+/// terminal cells or participating in keyboard/mouse focus.
+private struct WindowChromeView: View {
+    let config: Ghostty.Config
+    let footer: Bool
+
+    private var chrome: Ghostty.Config.WindowChrome {
+        footer ? config.uiFooter : config.uiHeader
+    }
+
+    private var rule: some View {
+        Rectangle()
+            .fill(config.foregroundColor.opacity(0.3))
+            .frame(height: 1)
+            .accessibilityHidden(true)
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 2) {
+                if footer { rule }
+                HStack(spacing: 8) {
+                    Text(footer ? "⌞" : "[ ]")
+                        .accessibilityHidden(true)
+                    Text(chrome.left)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
+                    if footer {
+                        Spacer(minLength: 0)
+                    } else {
+                        rule.frame(minWidth: 0, maxWidth: .infinity)
+                    }
+                    if !chrome.right.isEmpty {
+                        Text(chrome.right)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: geometry.size.width * 0.4, alignment: .trailing)
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .font(.system(size: 10, weight: .regular, design: .monospaced))
+        .foregroundColor(config.foregroundColor.opacity(0.7))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 3)
+        .frame(height: chrome.height)
+        .background(config.backgroundColor.opacity(config.backgroundOpacity))
+        .clipped()
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .combine)
     }
 }

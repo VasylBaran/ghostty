@@ -300,6 +300,12 @@ pub const Window = extern struct {
         tab_view: *adw.TabView,
         toolbar: *adw.ToolbarView,
         toast_overlay: *adw.ToastOverlay,
+        ui_header: *gtk.Box,
+        ui_header_title: *gtk.Label,
+        ui_header_right: *gtk.Label,
+        ui_footer: *gtk.Box,
+        ui_footer_left: *gtk.Label,
+        ui_footer_right: *gtk.Label,
 
         pub var offset: c_int = 0;
     };
@@ -712,6 +718,23 @@ pub const Window = extern struct {
 
         // Remainder uses the config
         const config = if (priv.config) |v| v.get() else return;
+
+        // These are siblings of the tab view, so they occupy layout space
+        // exactly once per window regardless of how many panes it contains.
+        priv.ui_header.as(gtk.Widget).setVisible(@intFromBool(config.@"ui-header"));
+        priv.ui_footer.as(gtk.Widget).setVisible(@intFromBool(config.@"ui-footer"));
+        priv.ui_header.as(gtk.Widget).setSizeRequest(-1, @intCast(config.@"ui-header-height"));
+        priv.ui_footer.as(gtk.Widget).setSizeRequest(-1, @intCast(config.@"ui-footer-height"));
+        priv.ui_header_title.setLabel(config.@"ui-header-title" orelse "");
+        priv.ui_header_right.setLabel(config.@"ui-header-right" orelse "");
+        priv.ui_footer_left.setLabel(config.@"ui-footer-left" orelse "");
+        priv.ui_footer_right.setLabel(config.@"ui-footer-right" orelse "");
+        priv.ui_header_right.as(gtk.Widget).setVisible(@intFromBool(
+            (config.@"ui-header-right" orelse "").len > 0,
+        ));
+        priv.ui_footer_right.as(gtk.Widget).setVisible(@intFromBool(
+            (config.@"ui-footer-right" orelse "").len > 0,
+        ));
 
         // Only add a solid background if we're opaque.
         self.toggleCssClass(
@@ -1981,17 +2004,23 @@ pub const Window = extern struct {
         if (priv.surface_init) return;
         priv.surface_init = true;
 
+        const chrome_height: u32 = if (priv.config) |v| height: {
+            const config = v.get();
+            break :height (if (config.@"ui-header") config.@"ui-header-height" else 0) +
+                (if (config.@"ui-footer") config.@"ui-footer-height" else 0);
+        } else 0;
+
         // Setup our default and minimum size.
         if (surface.getDefaultSize()) |size| {
             self.as(gtk.Window).setDefaultSize(
                 @intCast(size.width),
-                @intCast(size.height),
+                @intCast(size.height + chrome_height),
             );
         }
         if (surface.getMinSize()) |size| {
             self.as(gtk.Widget).setSizeRequest(
                 @intCast(size.width),
-                @intCast(size.height),
+                @intCast(size.height + chrome_height),
             );
         }
     }
@@ -2344,6 +2373,12 @@ pub const Window = extern struct {
             class.bindTemplateChildPrivate("tab_view", .{});
             class.bindTemplateChildPrivate("toolbar", .{});
             class.bindTemplateChildPrivate("toast_overlay", .{});
+            class.bindTemplateChildPrivate("ui_header", .{});
+            class.bindTemplateChildPrivate("ui_header_title", .{});
+            class.bindTemplateChildPrivate("ui_header_right", .{});
+            class.bindTemplateChildPrivate("ui_footer", .{});
+            class.bindTemplateChildPrivate("ui_footer_left", .{});
+            class.bindTemplateChildPrivate("ui_footer_right", .{});
 
             // Template Callbacks
             class.bindTemplateCallback("realize", &windowRealize);

@@ -1986,6 +1986,33 @@ keybind: Keybinds = .{},
 /// This configuration can be repeated to specify multiple remaps.
 @"key-remap": KeyRemapSet = .empty,
 
+/// Show a native decorative header above the terminal. It occupies layout
+/// space once per window, outside all terminal splits, and does not scroll.
+/// This is independent of native window decorations. Supported on macOS and GTK.
+@"ui-header": bool = false,
+
+/// Primary header label. Plain UTF-8 text; no markup is interpreted.
+@"ui-header-title": ?[:0]const u8 = "Ghostty",
+
+/// Optional right-aligned header label. Long labels are truncated to fit.
+@"ui-header-right": ?[:0]const u8 = null,
+
+/// Header height in logical pixels, clamped to the range 20 through 64.
+@"ui-header-height": u32 = 24,
+
+/// Show a native decorative footer below the terminal. Like `ui-header`, this
+/// is independent of window decorations and is disabled by default.
+@"ui-footer": bool = false,
+
+/// Left footer label. Plain UTF-8 text; no markup is interpreted.
+@"ui-footer-left": ?[:0]const u8 = null,
+
+/// Optional right-aligned footer label. Long labels are truncated to fit.
+@"ui-footer-right": ?[:0]const u8 = null,
+
+/// Footer height in logical pixels, clamped to the range 20 through 64.
+@"ui-footer-height": u32 = 24,
+
 /// Horizontal window padding. This applies padding between the terminal cells
 /// and the left and right window borders. The value is in points, meaning that
 /// it will be scaled appropriately for screen DPI.
@@ -4770,6 +4797,9 @@ pub fn finalize(self: *Config) !void {
             self._conditional_set.insert(.theme);
         }
     }
+
+    self.@"ui-header-height" = std.math.clamp(self.@"ui-header-height", 20, 64);
+    self.@"ui-footer-height" = std.math.clamp(self.@"ui-footer-height", 20, 64);
 
     // Used for a variety of defaults. See the function docs as well the
     // specific variable use sites for more details.
@@ -11387,4 +11417,42 @@ test "compatibility: window new-window" {
             cfg.@"macos-dock-drop-behavior",
         );
     }
+}
+
+test "window chrome config" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    var cfg = try Config.default(alloc);
+    defer cfg.deinit();
+
+    try testing.expect(!cfg.@"ui-header");
+    try testing.expect(!cfg.@"ui-footer");
+    try testing.expectEqual(@as(u32, 24), cfg.@"ui-header-height");
+    try testing.expectEqual(@as(u32, 24), cfg.@"ui-footer-height");
+    try testing.expectEqualStrings("Ghostty", cfg.@"ui-header-title".?);
+
+    var it: TestIterator = .{ .data = &.{
+        "--ui-header=true",
+        "--ui-footer=true",
+        "--ui-header-title=端末",
+        "--ui-header-right=Development",
+        "--ui-footer-left=Project — Workspace",
+        "--ui-footer-right=Local session // Ready",
+        "--ui-header-height=0",
+        "--ui-footer-height=4294967295",
+    } };
+    try cfg.loadIter(alloc, &it);
+    try cfg.finalize();
+    try testing.expect(cfg.@"ui-header");
+    try testing.expect(cfg.@"ui-footer");
+    try testing.expectEqualStrings("端末", cfg.@"ui-header-title".?);
+    try testing.expectEqualStrings("Development", cfg.@"ui-header-right".?);
+    try testing.expectEqualStrings("Project — Workspace", cfg.@"ui-footer-left".?);
+    try testing.expectEqualStrings("Local session // Ready", cfg.@"ui-footer-right".?);
+    try testing.expectEqual(@as(u32, 20), cfg.@"ui-header-height");
+    try testing.expectEqual(@as(u32, 64), cfg.@"ui-footer-height");
+
+    var copy = try cfg.clone(alloc);
+    defer copy.deinit();
+    try testing.expectEqualStrings("端末", copy.@"ui-header-title".?);
 }
