@@ -730,10 +730,10 @@ pub const Window = extern struct {
         priv.ui_footer_left.setLabel(config.@"ui-footer-left" orelse "");
         priv.ui_footer_right.setLabel(config.@"ui-footer-right" orelse "");
         priv.ui_header_right.as(gtk.Widget).setVisible(@intFromBool(
-            (config.@"ui-header-right" orelse "").len > 0,
+            if (config.@"ui-header-right") |label| label.len > 0 else false,
         ));
         priv.ui_footer_right.as(gtk.Widget).setVisible(@intFromBool(
-            (config.@"ui-footer-right" orelse "").len > 0,
+            if (config.@"ui-footer-right") |label| label.len > 0 else false,
         ));
 
         // Only add a solid background if we're opaque.
